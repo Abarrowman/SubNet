@@ -1,0 +1,42 @@
+#eclipse files
+*.classpath
+*.project
+/.settings/*
+/.metadata/*
+/.recommenders/*
+*.cache-main
+
+#visual studio files
+/CSubNet/.settings/*
+/CSubNet/CSubNet/resource.h
+*.cproject
+*.suo
+*.aps
+*.sdf
+*.sln
+*.vcxproj
+*filters
+*.log
+*.user
+*.tlog
+*.pdb
+*.idb
+*.rc
+*.diagsession
+*.ilk
+*.res
+*.pgc
+*.pgd
+
+
+
+
+#build products
+*.jar
+*.class
+*.o
+*.obj
+*.exe
+
+#testresources
+/test/*

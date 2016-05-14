@@ -1,0 +1,8 @@
+Neural Network for Evaluating Anime Quality
+
+Input: .ass subtitles
+Output: Expected rating from 1 to 10
+Training Data: .ass subtitles of already watched anime
+
+
+
