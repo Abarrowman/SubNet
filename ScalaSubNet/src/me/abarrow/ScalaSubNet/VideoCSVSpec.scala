@@ -12,7 +12,8 @@ class VideoCSVSpec(val wordContext:WordContext, val ratingRange:Range.Inclusive 
   }
 
   val outputCSVColumns: Array[String] = {
-    ratingRange.map { x => "rated_ge_" + x }.toArray
+    Array("rating")
+    //ratingRange.map { x => "rated_ge_" + x }.toArray
   }
 
   def emptySubtitleStatsCSV: CSV = {

@@ -28,19 +28,19 @@ class VideoEstimator (val wordContext:WordContext, val mkvToolNix:MKVToolNix,
   val unknownWordsPath = new File(outputFolderFile, "unknown_words.txt").getAbsolutePath
   
   def execute(startingStage:Int = 0): Unit = {
-    if (startingStage < 1) {
+    if (startingStage <= 0) {
       createRatingList()
     }
-    if (startingStage < 2) {
+    if (startingStage <= 1) {
       extractSubtitles()
     }
-    if (startingStage < 3) {
+    if (startingStage <= 2) {
       calculateVideoStats()
     }
-    if (startingStage < 4) {
+    if (startingStage <= 3) {
       trainNetwork()
     }
-    if (startingStage < 5) {
+    if (startingStage <= 4) {
       executeNetwork()
     }
     showRatings()
@@ -107,12 +107,12 @@ class VideoEstimator (val wordContext:WordContext, val mkvToolNix:MKVToolNix,
   def showRatings():Unit = {
     println("Sanity")
     CSV.load(sanityVidsPath).toMaps().foreach { f =>
-      val rating = videoCSVSpec.outputCSVColumns.map { x => f.get(x).get.toDouble }.reduce { (x, y) => x + y } + 1
+      val rating = (videoCSVSpec.outputCSVColumns.map { x => f.get(x).get.toDouble }.reduce { (x, y) => x + y } * 9) + 1
       println(f.get("name").get + " -> " + rating); 
     }
     println("Estimates")
     CSV.load(estimatedVidsPath).toMaps().foreach { f =>
-      val rating = videoCSVSpec.outputCSVColumns.map { x => f.get(x).get.toDouble }.reduce { (x, y) => x + y } + 1
+      val rating = (videoCSVSpec.outputCSVColumns.map { x => f.get(x).get.toDouble }.reduce { (x, y) => x + y } * 9) + 1
       println(f.get("name").get + " -> " + rating); 
     }
   }
@@ -214,8 +214,10 @@ class VideoEstimator (val wordContext:WordContext, val mkvToolNix:MKVToolNix,
       f + "_ratio" -> decimalFormat.format(groupedWords.getOrElse(f, Set()).size.doubleValue() / uniqueWords.size)
     }.toMap
 
-    val ratingEntries = (2 to 10).map { x => ("rated_ge_" + x, if (rating >= x) "1" else "0") }.toMap
-
+    //val ratingEntries = (2 to 10).map { x => ("rated_ge_" + x, if (rating >= x) "1" else "0") }.toMap
+    val decimalRating = (rating - 1.0d) / 9;
+    val ratingEntries = Map[String,String]("rating" -> decimalFormat.format(decimalRating))
+    
     csv.addRow(mainEntries ++ wordTypeEntries ++ ratingEntries)
 
     //println(name + " Content:")
