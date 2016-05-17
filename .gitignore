@@ -27,9 +27,7 @@
 *.res
 *.pgc
 *.pgd
-
-
-
+*.opensdf
 
 #build products
 *.jar

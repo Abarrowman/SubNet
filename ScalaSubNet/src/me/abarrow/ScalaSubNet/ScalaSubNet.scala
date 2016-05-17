@@ -20,14 +20,23 @@ object ScalaSubNet {
     
     val mkvToolNix = new MKVToolNix("C:\\Users\\Adam\\Downloads\\Portable Executables\\mkvtoolnix-64bit-8.6.1",
       "mkvinfo.exe", "mkvextract.exe")
+    
     //val cSubNet = new CSubNet("E:\\A\\Dropbox\\Dev\\Multiple\\SubNet\\CSubNet\\Debug\\CSubNet.exe")
     val cSubNet = new CSubNet("E:\\A\\Dropbox\\Dev\\Multiple\\SubNet\\CSubNet\\CSubNet\\x64\\Release\\CSubNet.exe")
-    val inputVidFolder = "H:\\Favorites"
+    
+    //val inputVidFolder = "H:\\Favorites"
+    val inputVidFolder = "H:\\Other\\Experiment"
+    
     //val outputFolder = "E:\\A\\Dropbox\\Dev\\Multiple\\SubNet\\test\\test-bake-sakura"
-    val outputFolder = "E:\\A\\Dropbox\\Dev\\Multiple\\SubNet\\test\\test-1"
+    //val outputFolder = "E:\\A\\Dropbox\\Dev\\Multiple\\SubNet\\test\\test-1"
+    val outputFolder = "E:\\A\\Dropbox\\Dev\\Multiple\\SubNet\\test\\test-experiment"
+    //val outputFolder = "E:\\A\\Dropbox\\Dev\\Multiple\\SubNet\\test\\test-magnitude-8"
 
     val ctx = new VideoEstimator(wordContext, mkvToolNix, cSubNet, inputVidFolder, outputFolder)
-    ctx.execute(3);
+    ctx.execute(3)
+    //ctx.extractSubtitles()
+    //ctx.calculateVideoStats()
+    
   }
   
   

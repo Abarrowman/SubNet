@@ -4,7 +4,9 @@ import scala.io.Source
 import scala.io.Codec
 import java.io.File
 import java.io.BufferedWriter
-import java.io.FileWriter
+import java.io.OutputStreamWriter
+import java.io.FileOutputStream
+
 
 object FileUtils {
   
@@ -80,9 +82,16 @@ object FileUtils {
   }
   
   def saveUTF8Text(path:String, text:String):Unit = {
-    val bw = new BufferedWriter(new FileWriter(new File(path)))
-    bw.write(text)
-    bw.close()
+    saveUTF8File(new File(path), text)
+  }
+  
+  def saveUTF8File(file:File, text:String):Unit = {
+    val bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF-8"))
+    try {
+      bw.write(text) 
+    } finally {
+      bw.close()
+    }
   }
 
   def getFileNameAndExtension(path: String): (String, String) = {

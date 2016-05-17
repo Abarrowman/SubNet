@@ -18,6 +18,8 @@ class VideoEstimator (val wordContext:WordContext, val mkvToolNix:MKVToolNix,
   
   
   val ratingsPath = new File(outputFolderFile, "ratings.csv").getAbsolutePath
+  val subsFolder = new File(outputFolderFile, "subs")
+  val subsPath = new File(outputFolderFile, "subs.csv").getAbsolutePath
   val ratedVidsPath = new File(outputFolderFile, "rated.csv").getAbsolutePath
   val unratedVidsPath = new File(outputFolderFile, "unrated.csv").getAbsolutePath
   val estimatedVidsPath = new File(outputFolderFile, "estimates.csv").getAbsolutePath
@@ -30,15 +32,18 @@ class VideoEstimator (val wordContext:WordContext, val mkvToolNix:MKVToolNix,
       createRatingList()
     }
     if (startingStage < 2) {
-      calculateVideoStats()
+      extractSubtitles()
     }
     if (startingStage < 3) {
-      trainNetwork();
+      calculateVideoStats()
     }
     if (startingStage < 4) {
-      executeNetwork();
+      trainNetwork()
     }
-    showRatings();
+    if (startingStage < 5) {
+      executeNetwork()
+    }
+    showRatings()
   }
   
   def createRatingList():Unit = {
@@ -49,16 +54,43 @@ class VideoEstimator (val wordContext:WordContext, val mkvToolNix:MKVToolNix,
     listCSV.save(ratingsPath)
   }
   
+  def extractSubtitles():Unit = {
+    val subCSV = new CSV(Array("path", "text", "rating"))
+    FileUtils.createDirsIfNeeded(subsFolder.getAbsolutePath)
+    val ratingsCSV = CSV.load(ratingsPath).toMaps().foreach({ m =>
+      val path = m("path")
+      val ratingStr = m("rating")
+      val rating = ratingStr.toInt
+      if (VideoUtils.isMKVVideo(path) && (rating >= 0) && (rating <= 10)) {
+        val subtitles = mkvToolNix.extractBestSubTrack(path)
+        if (subtitles.isDefined) {
+          val videoNameAndType = FileUtils.getFileNameAndExtension(path)
+          val destFile = File.createTempFile(videoNameAndType._1, ".txt", subsFolder) 
+          FileUtils.saveUTF8File(destFile, ASSParser.parse(subtitles.get))
+          subCSV.addRow(Array(path, destFile.getAbsolutePath, ratingStr))
+        }
+      }
+    })
+    subCSV.save(subsPath)
+  }
+  
   def calculateVideoStats():Unit = {
-    val videosAndRatings = CSV.load(ratingsPath)
-      .toMaps().flatMap { m =>
-        FileUtils.getDeepFiles(m("path")).filter(VideoUtils.isMKVVideo).zip(Stream.continually(m("rating").toInt))
-      }.filter { x => (x._2 >= 0) && (x._2 <= 10) }.groupBy { x => x._2 > 0 }
+    val videosAndRatings = CSV.load(subsPath).toMaps().map{m =>
+      (m("path"), m("text"), m("rating").toInt)
+    }.filter { x => (x._3 >= 0) && (x._3 <= 10) }.groupBy { x => x._3 > 0 }
     
     computeVideoData(videosAndRatings.getOrElse(true, Array()), ratedVidsPath)
     computeVideoData(videosAndRatings.getOrElse(false, Array()), unratedVidsPath)
     
     FileUtils.saveUTF8Text(unknownWordsPath, unknownWords.mkString("\n"))
+  }
+  
+   private def computeVideoData(videos: Array[(String, String, Int)], outputCSVPath: String): Unit = {
+    val csv = videoCSVSpec.emptySubtitleStatsCSV
+    videos.foreach { x =>
+      addTextStats(csv, x._1, FileUtils.openUTF8Text(x._2), x._3)
+    }
+    csv.save(outputCSVPath);
   }
   
   def trainNetwork():Unit = {
@@ -89,16 +121,7 @@ class VideoEstimator (val wordContext:WordContext, val mkvToolNix:MKVToolNix,
   private def addVideoStats(csv: CSV, targetFilePath: String, rating: Int): Unit = {
     val subtitles = mkvToolNix.extractBestSubTrack(targetFilePath)
     if (subtitles.isDefined) {
-      addTextStats(csv, targetFilePath, ASSParser.parse(subtitles.get), rating)
     }
-  }
-  
-  private def computeVideoData(videos: Array[(String, Int)], outputCSVPath: String): Unit = {
-    val csv = videoCSVSpec.emptySubtitleStatsCSV
-    videos.foreach { x =>
-      addVideoStats(csv, x._1, x._2)
-    }
-    csv.save(outputCSVPath);
   }
   
   private def getVideosCommandLine(folder: String): Array[(String, Int)] = {
@@ -159,6 +182,9 @@ class VideoEstimator (val wordContext:WordContext, val mkvToolNix:MKVToolNix,
       oldIdx
     }
     val numSentences = sentenceIdx
+    if (numSentences == 0) {
+      return
+    }
     val numQuestions = sentences.count(p => p._2.last.punct == Some('?'))
 
     val wordLengthDist = words.groupBy { x => x.length() }.map { f => (f._1, f._2.size) }

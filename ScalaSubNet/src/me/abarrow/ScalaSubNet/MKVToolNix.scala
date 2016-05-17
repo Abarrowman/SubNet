@@ -11,8 +11,8 @@ class MKVToolNix(val mkvToolNixDir: String, val mkvInfoExecutable: String, val m
   val trackNumberPrefix = "|  + Track number: "
   val trackTypePrefix = "|  + Track type: "
   val codecIdPrefix = "|  + Codec ID: "
-  val trackNamePrefix = "|  + Language: "
-  val trackLanguagePrefix = "|  + Name: "
+  val trackLanguagePrefix = "|  + Language: "
+  val trackNamePrefix = "|  + Name: "
   
   def determineSubTracks(targetFilePath: String): Seq[SubtitleTrack] = {    
     val command = Process(Seq(
@@ -101,7 +101,7 @@ class MKVToolNix(val mkvToolNixDir: String, val mkvInfoExecutable: String, val m
           if (trackNameClean.contains("jpn")) {
             total += 2
           }
-          if (trackNameClean.contains("title")) {
+          if (trackNameClean.contains("title") && !trackNameClean.contains("subtitle") ) {
             total = -1
           }
           if (trackNameClean.contains("sign")) {
@@ -117,7 +117,6 @@ class MKVToolNix(val mkvToolNixDir: String, val mkvInfoExecutable: String, val m
       if (highEnouhgRatedSubs.size > 0) {
         val oneIdxedId = highEnouhgRatedSubs.maxBy(f => f._2)._1.trackId
         result = Some(oneIdxedId - 1) //Use 0-indexing as opposed to 1-indexing
-
       }
     }
     result
