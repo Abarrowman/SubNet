@@ -200,7 +200,7 @@ class VideoEstimator (val wordContext:WordContext, val mkvToolNix:MKVToolNix,
 
     val otherWords = groupedWords.getOrElse(wordContext.unknownWordType, Set())
 
-    var decimalFormat = new DecimalFormat("#")
+    val decimalFormat = new DecimalFormat("#")
     decimalFormat.setMaximumFractionDigits(15)
     decimalFormat.setMaximumIntegerDigits(15)
 
