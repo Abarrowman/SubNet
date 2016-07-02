@@ -6,12 +6,16 @@ import me.abarrow.ScalaSubNet.utils.StringUtils
 class CSubNet(val executablePath: String) {
 
   def train(trainingCSVPath: String, inputCols: Int, outputNetworkPath: String,
-    layerSizes: Option[Traversable[Int]] = None, labelCols: Int = 0): String = {
+    layerSizes: Option[Traversable[Int]] = None, labelCols: Int = 0, algorithm:Option[String] = None): String = {
 
     var options = Seq("-l=" + labelCols.toString())
     if (layerSizes.isDefined) {
       val layerSizeStr = "-s=" + layerSizes.mkString(",")
       options :+= layerSizeStr
+    }
+    if (algorithm.isDefined) {
+      val algorithmStr = "-a=" + algorithm.get
+      options :+= algorithmStr
     }
     
     val preParams = Seq(executablePath,
@@ -38,7 +42,7 @@ class CSubNet(val executablePath: String) {
       inputCSVPath,
       outputCSVPath
     ))
-    println(command)
+    //println(command)
     val result = command.!
     if (result != 0) {
       throw new RuntimeException("Executing network failed.")

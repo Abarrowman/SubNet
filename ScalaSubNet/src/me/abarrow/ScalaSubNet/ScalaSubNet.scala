@@ -7,98 +7,124 @@ import scala.io.StdIn
 import me.abarrow.ScalaSubNet.mal.MALStats
 import me.abarrow.ScalaSubNet.mal.MALList
 import me.abarrow.ScalaSubNet.mal.MALIDs
+import me.abarrow.ScalaSubNet.mal.MALCSVSpec
+import me.abarrow.ScalaSubNet.mal.MALEntry
 import java.text.DecimalFormat
 
-
 object ScalaSubNet {
-  
+
   def getHumanTimestamp(): String = {
     val dateFormat = new SimpleDateFormat("YYYY-MMM-dd HH:mm:ss.SSS")
     val time = Calendar.getInstance().getTime()
     dateFormat.format(time)
   }
 
-  def main(args: Array[String]):Unit = {
+  def main(args: Array[String]): Unit = {
     //subMain()
-    
-    
-    val csvPath = "E:\\A\\Dropbox\\Dev\\Multiple\\SubNet\\test\\mal\\list-csv.csv"
+    malMain()
+  }
+
+  def malMain(): Unit = {
+
+    val trainingCSVPath = "E:\\A\\Dropbox\\Dev\\Multiple\\SubNet\\test\\mal\\rated-list.csv"
+    val inputCSVPath = "E:\\A\\Dropbox\\Dev\\Multiple\\SubNet\\test\\mal\\unrated-list.csv"
+    val outputCSVPath = "E:\\A\\Dropbox\\Dev\\Multiple\\SubNet\\test\\mal\\estimated-list.csv"
+    val sanityCSVPath = "E:\\A\\Dropbox\\Dev\\Multiple\\SubNet\\test\\mal\\sanity-list.csv"
     val outputNetworkPath = "E:\\A\\Dropbox\\Dev\\Multiple\\SubNet\\test\\mal\\network.net"
-    
+
     //val cSubNet = new CSubNet("E:\\A\\Dropbox\\Dev\\Multiple\\SubNet\\CSubNet\\Debug\\CSubNet.exe")
     val cSubNet = new CSubNet("E:\\A\\Dropbox\\Dev\\Multiple\\SubNet\\CSubNet\\CSubNet\\x64\\Release\\CSubNet.exe")
-    
-    println("Loading Anime List")
-    val list = MALList.getList("abarrow")
+
+
+    /*val list = MALList.getList("abarrow")
     println(list.entries.mkString("\n"))
+
+    var idx = 0
+    val entriesAndStats = list.entries.map { x =>
+      println(idx + " " + x.name)
+      idx = idx + 1
+      val stats = MALStats.getStats(x.id)
+      Thread.sleep(1000); //don't rate limit me
+      (x, stats)
+    }
     
-    //val stats = MALStats.getStats(9756)
-    //println(stats)
+    val ratedAnime = entriesAndStats.filter { x =>
+      x._2.rating.isDefined
+    }
     
-    val leftCols = Array("name","id","averageRating")
-    val genreCols = MALIDs.genres.map(f => "genre" + f).toArray
-    val rightCols = Array("userRating")
-    val header = leftCols ++ genreCols ++ rightCols
+    val scoredAnime = ratedAnime.filter { x =>
+      (x._1.userStatus != 6) && (x._1.score != 0)
+    }
+    extractAnimeStatsCSV(scoredAnime, trainingCSVPath)
     
-    val inputCols = genreCols.length + 1
+    val unScoredAnime = ratedAnime.filter { x =>
+     (x._1.userStatus == 6) && (x._1.score == 0)
+    }
+    extractAnimeStatsCSV(unScoredAnime, inputCSVPath)
+
+    val inputCols = MALCSVSpec.inputCSVColumns 
+    cSubNet.train(trainingCSVPath, inputCols.length, outputNetworkPath, None, labelCols = 2, Some("anneal"))
+    cSubNet.execute(outputNetworkPath, inputCSVPath, outputCSVPath, labelCols = 2)
+    cSubNet.execute(outputNetworkPath, trainingCSVPath, sanityCSVPath, labelCols = 2)
+    */
+    
+    println("Sanity")
+    CSV.load(sanityCSVPath).toMaps().foreach { f =>
+      val rating = f.get("userRating").get.toDouble * 9 + 1
+      println(f.get("name").get + " -> " + rating); 
+    }
+    
+    println("Estimates")
+    CSV.load(outputCSVPath).toMaps().foreach { f =>
+      val rating = f.get("userRating").get.toDouble * 9 + 1
+      println(f.get("name").get + " -> " + rating); 
+    }
+  }
+
+  def extractAnimeStatsCSV(entries: Array[(MALEntry, MALStats)], csvPath: String) = {
     
     val decimalFormat = new DecimalFormat("#")
     decimalFormat.setMaximumFractionDigits(15)
     decimalFormat.setMaximumIntegerDigits(15)
     
-    val csv = new CSV(header)
-    var idx = 0
-    println("Loading Stats")
-    val entriesAndStats = list.entries.map { x =>
-      println(idx + " " + x.name)
-      idx = idx + 1
-      val stats = MALStats.getStats(x.id)
-      Thread.sleep(2000); //don't rate limit me
-      (x, stats)
-    }
-    println("Filtering Stats")
-    val filteredEntriesAndStats = entriesAndStats.filter{x =>
-      x._2.rating.isDefined && (x._1.userStatus != 6) && (x._1.score != 0)
-    }
-    println("Assembling Training Data")
-    filteredEntriesAndStats.foreach { pair =>
+    val csv = MALCSVSpec.emptyCSV()
+    entries.foreach { pair =>
       val entry = pair._1
       val stats = pair._2
-      
+
       val leftRow = Array(entry.name, entry.id.toString(), decimalFormat.format((stats.rating.get - 1) / 9))
       val genreRow = MALIDs.genres.map(f =>
-        if(stats.genres.contains(f._1)) {
+        if (stats.genres.contains(f._1)) {
           "1"
         } else {
           "0"
-        }
-      ).toArray
+        }).toArray
+      val studioRow = MALIDs.studios.map(f =>
+        if (stats.studios.contains(f._1)) {
+          "1"
+        } else {
+          "0"
+        }).toArray
       val rightRow = Array(decimalFormat.format((entry.score - 1.0) / 9.0))
-      csv.addRow(leftRow ++ genreRow ++ rightRow)
+      csv.addRow(leftRow ++ genreRow ++ studioRow ++ rightRow)
     }
-    println("Saving CSV")
     csv.save(csvPath)
-    println("Training Network")
-    cSubNet.train(csvPath, inputCols, outputNetworkPath, None, labelCols = 2)
   }
-  
-  
-  
-  
-  def subMain():Unit = {
+
+  def subMain(): Unit = {
     val wordContext = new WordContext("E:\\A\\Dropbox\\Dev\\Multiple\\SubNet\\data\\wordlists", Set("adjectives", "nouns", "verbs", "adverbs", "articles",
-    "pronouns", "prepositions", "postpositions", "pro_sentences", "conjunctions",
-    "auxiliary_verbs", "interjections", "slang", "anime_slang"))
-    
+      "pronouns", "prepositions", "postpositions", "pro_sentences", "conjunctions",
+      "auxiliary_verbs", "interjections", "slang", "anime_slang"))
+
     val mkvToolNix = new MKVToolNix("C:\\Users\\Adam\\Downloads\\Portable Executables\\mkvtoolnix-64bit-8.6.1",
       "mkvinfo.exe", "mkvextract.exe")
-    
+
     //val cSubNet = new CSubNet("E:\\A\\Dropbox\\Dev\\Multiple\\SubNet\\CSubNet\\Debug\\CSubNet.exe")
     val cSubNet = new CSubNet("E:\\A\\Dropbox\\Dev\\Multiple\\SubNet\\CSubNet\\CSubNet\\x64\\Release\\CSubNet.exe")
-    
+
     //val inputVidFolder = "H:\\Favorites"
     val inputVidFolder = "H:\\Other\\Experiment"
-    
+
     //val outputFolder = "E:\\A\\Dropbox\\Dev\\Multiple\\SubNet\\test\\test-bake-sakura"
     //val outputFolder = "E:\\A\\Dropbox\\Dev\\Multiple\\SubNet\\test\\test-1"
     //val outputFolder = "E:\\A\\Dropbox\\Dev\\Multiple\\SubNet\\test\\test-experiment"
@@ -110,7 +136,4 @@ object ScalaSubNet {
     //ctx.extractSubtitles()
     //ctx.calculateVideoStats()
   }
-  
-  
-
 }

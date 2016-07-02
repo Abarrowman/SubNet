@@ -8,13 +8,12 @@ import java.net.URL
 class MALStats(val name:String, val rating:Option[Double], val genres:Set[Int], val studios:Set[Int]) {
   override def toString():String = {
     if (rating.isDefined) {
-      name + " (Unrated) Genres:[" + genres.map(MALIDs.genres).mkString(",") +
-      "] Studios:[" + studios.map(MALIDs.studios).mkString(",") + "]" 
-    } else {
       name + " (" + rating.get + "/10) Genres:[" + genres.map(MALIDs.genres).mkString(",") +
       "] Studios:[" + studios.map(MALIDs.studios).mkString(",") + "]" 
+    } else {
+      name + " (Unrated) Genres:[" + genres.map(MALIDs.genres).mkString(",") +
+      "] Studios:[" + studios.map(MALIDs.studios).mkString(",") + "]"
     }
-    
   }
 }
 
@@ -55,11 +54,19 @@ object MALStats {
         x.attr("href").split("/")(3).toInt
       }.filter(MALIDs.genres.contains)
       
-      val producers = doc.select("div a[href^='/anime/producer/']")
+      val studioLabel = doc.select("span:containsOwn(Studios:)").first()
+      if (studioLabel == null) {
+        throw new IllegalArgumentException("Anime on MAL must have studios.")
+      }
+      
+      val producers = studioLabel.parent().select("a[href^='/anime/producer/']")
       val studioIDs = producers.asScala.map{ x =>
         //given href of the form /anime/producer/ID/name
-        x.attr("href").split("/")(3).toInt
-      }.filter(MALIDs.studios.contains)
+        val id = x.attr("href").split("/")(3).toInt
+        val name = x.html()
+        MALIDs.studios(id) = name
+        id
+      }
       
       val stats = new MALStats(name, rating, genreIDs.toSet, studioIDs.toSet)
       bufferedStats(animeId) = stats

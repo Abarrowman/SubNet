@@ -1,65 +1,12 @@
 package me.abarrow.ScalaSubNet.mal
 
+import collection._
+
 object MALIDs {
   //many studios are missing the list of producers is way too long
-  val studios = Map(
-      1 -> "Studio Pierrot",
-      2 -> "Kyoto Animation",
-      3 -> "Gonzo",
-      4 -> "Bones",
-      5 -> "Bee Train",
-      6 -> "Gainax",
-      7 -> "J.C.Staff",
-      8 -> "Artland",
-      10 -> "Production I.G",
-      11 -> "Madhouse",
-      13 -> "Studio 4°C",
-      14 -> "Sunrise",
-      18 -> "Toei Animation",
-      21 -> "Studio Ghibli",
-      22 -> "Nippon Animation",
-      27 -> "Xebec",
-      28 -> "OLM, Inc.",
-      30 -> "Ajia-Do",
-      32 -> "Manglobe",
-      34 -> "Hal Film Maker",
-      35 -> "Seven Arcs",
-      36 -> "Studio Gallop",
-      37 -> "Studio Deen",
-      38 -> "Arms",
-      39 -> "Daume",
-      41 -> "Statelight",
-      43 -> "ufotable",
-      44 -> "Shaft",
-      47 -> "Khara",
-      48 -> "AIC",
-      51 -> "Diomedea",
-      56 -> "A-1 Pictures",
-      60 -> "Actas",
-      65 -> "Tokyo Movie Shinsha",
-      68 -> "Mushi Production",
-      70 -> "Nomad",
-      73 -> "TMS Entertainment",
-      77 -> "APPP",
-      81 -> "Radix",
-      83 -> "AIC Spirits",
-      84 -> "Studio Rikka",
-      86 -> "Group TAC",
-      88 -> "AIC A.S.T.A.",
-      91 -> "feel.",
-      94 -> "Telecom Animation Film",
-      95 -> "Doga Kobo",
-      96 -> "Yumeta Company",
-      101 -> "Studio Hibari",
-      103 -> "Tatsunoko Production",
-      110 -> "Triangle Staff",
-      112 -> "Brain's Base",
-      120 -> "TNK",
-      314 -> "White Fox",
-      555 -> "Studio Chizu",
-      858 -> "Wit Studio")
+  val studios = mutable.Map.empty[Int, String]
     
-  val genres = Map(
+  val genres = immutable.Map(
       1 -> "Action",
       2 -> "Adventure",
       3 -> "Cars",
@@ -104,7 +51,7 @@ object MALIDs {
       42 -> "Seinen",
       43 -> "Josei")
       
-  val statuses = Map(
+  val statuses = immutable.Map(
       1 -> "Watching",
       2 -> "Completed",
       3 -> "On Hold",
