@@ -28,6 +28,8 @@
 *.pgc
 *.pgd
 *.opensdf
+*.iobj
+*.ipdb
 
 #build products
 *.jar
