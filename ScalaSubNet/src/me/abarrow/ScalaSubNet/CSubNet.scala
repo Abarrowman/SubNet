@@ -6,16 +6,21 @@ import me.abarrow.ScalaSubNet.utils.StringUtils
 class CSubNet(val executablePath: String) {
 
   def train(trainingCSVPath: String, inputCols: Int, outputNetworkPath: String,
-    layerSizes: Option[Traversable[Int]] = None, labelCols: Int = 0, algorithm:Option[String] = None): String = {
+    layerSizes: Option[Traversable[Int]] = None, labelCols: Int = 0,
+    algorithm:Option[String] = None, rounds:Option[Int] = None): String = {
 
     var options = Seq("-l=" + labelCols.toString())
     if (layerSizes.isDefined) {
-      val layerSizeStr = "-s=" + layerSizes.mkString(",")
+      val layerSizeStr = "-s=" + layerSizes.get.mkString(",")
       options :+= layerSizeStr
     }
     if (algorithm.isDefined) {
       val algorithmStr = "-a=" + algorithm.get
       options :+= algorithmStr
+    }
+    if (rounds.isDefined) {
+      val roundsStr = "-r=" + rounds.get
+      options :+= roundsStr
     }
     
     val preParams = Seq(executablePath,

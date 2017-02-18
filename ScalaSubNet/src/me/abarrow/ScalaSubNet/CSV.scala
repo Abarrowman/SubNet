@@ -7,9 +7,10 @@ class CSV(val header: Array[String]) {
   val rows = new ArrayBuffer[Array[String]]()
 
   def addRow(row: Array[String]): Unit = {
-    if (row.length != header.length) {
+    if (row.length != cols) {
       //TODO: handle quoted strings to avoid splitting on commas
-      throw new IllegalArgumentException("Row length " + row.length + " is not the same as header length " + header.length)
+      throw new IllegalArgumentException("Row length " + row.length +
+          " is not the same as header length " + cols)
     }
     this.synchronized {
       rows.append(row)
@@ -17,18 +18,19 @@ class CSV(val header: Array[String]) {
   }
 
   def addRow(entry: Map[String, String]): Unit = {
-    val row = Array.fill[String](header.length)("")
+    val row = Array.fill[String](cols)("")
     entry.foreach { f =>
       val idx = header.indexOf(f._1)
       if (idx == -1) {
-        throw new IllegalArgumentException("Column " + f._1 + " not found in header.")
+        throw new IllegalArgumentException("Column " + f._1 +
+            " not found in header.")
       }
       row(idx) = f._2
     }
     addRow(row)
   }
   
-  
+  lazy val cols:Int = header.length
 
   def encode(sep: String = ",", newline: String = "\n"): String = {
     val output: StringBuilder = new StringBuilder()

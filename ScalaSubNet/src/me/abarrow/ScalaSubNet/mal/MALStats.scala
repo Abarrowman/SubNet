@@ -5,30 +5,58 @@ import collection.JavaConverters._
 import scala.collection.mutable.Map
 import java.net.URL
 
-class MALStats(val name:String, val rating:Option[Double], val genres:Set[Int], val studios:Set[Int]) {
+class MALStats(val id:Int, val name:String,
+    val rating:Option[Double], val genres:Option[Set[Int]], val studios:Option[Set[Int]]) {
   override def toString():String = {
-    if (rating.isDefined) {
-      name + " (" + rating.get + "/10) Genres:[" + genres.map(MALIDs.genres).mkString(",") +
-      "] Studios:[" + studios.map(MALIDs.studios).mkString(",") + "]" 
+    val nameRating = if (rating.isDefined) {
+      id.toString() + ". " + name + " (" + rating.get + "/10)" 
     } else {
-      name + " (Unrated) Genres:[" + genres.map(MALIDs.genres).mkString(",") +
-      "] Studios:[" + studios.map(MALIDs.studios).mkString(",") + "]"
+      id.toString() + ". " +name + " (Unrated)"
     }
+    val genreRating = if (genres.isDefined) {
+      "Genres:[" + genres.get.map(MALIDs.genres).mkString(",") + "]"
+    } else {
+      "Genres:Unknown"
+    }
+    val studioRating = if (studios.isDefined) {
+      "Studios:[" + studios.get.map(MALIDs.studios).mkString(",") + "]"
+    } else {
+      "Studios:Unknown"
+    }
+    Array(nameRating, genreRating, studioRating).reduce{(a, b) => a + " " +  b}
   }
 }
 
 object MALStats {
-  private val MAL_ANIME_PAGE_PREFIX = "http://myanimelist.net/anime/"
-  
   private val bufferedStats = scala.collection.mutable.Map[Int, MALStats]()
+  
+  def getTopAnime(count:Int = 1000):IndexedSeq[MALStats] = {
+    Range(0, count, 50).map{idx =>
+      Thread.sleep(100)
+      val doc = Jsoup.parse(new URL(MALURLs.MAL_TOP_ANIME_PAGE_PREFIX + idx.toString()), 60000)
+      println("Loaded " + (idx + 50) + "/" + count)
+      val rankLists = doc.select("tr.ranking-list")
+      rankLists.asScala.map { rl =>
+        val titleLink = rl.select("td.title div.detail a").first()
+        val id = titleLink.attr("href").split("/")(4).toInt
+        val name = titleLink.html()
+        val scoreStr = rl.select("td.score span").first().html()
+        val score = if (scoreStr == "N/A") {
+          None
+        }else {
+          Some(scoreStr.toDouble)
+        }
+        new MALStats(id, name, score, None, None)
+      }
+    }.flatten
+  }
   
   def getStats(animeId:Int):MALStats = {
     val statsOption = bufferedStats.get(animeId)
     if (statsOption.isDefined) {
       statsOption.get
     } else {
-      val doc = Jsoup.parse(new URL(MAL_ANIME_PAGE_PREFIX + animeId.toString()), 60000)
-      //val doc = Jsoup.connect(MAL_ANIME_PAGE_PREFIX + animeId.toString()).get()
+      val doc = Jsoup.parse(new URL(MALURLs.MAL_ANIME_PAGE_PREFIX + animeId.toString()), 60000)
       
       val nameElement = doc.select("h1 span[itemprop=name]").first()
       if (nameElement == null) {
@@ -68,7 +96,7 @@ object MALStats {
         id
       }
       
-      val stats = new MALStats(name, rating, genreIDs.toSet, studioIDs.toSet)
+      val stats = new MALStats(animeId, name, rating, Some(genreIDs.toSet), Some(studioIDs.toSet))
       bufferedStats(animeId) = stats
       stats
     }
